@@ -25,6 +25,11 @@ export const routes: Routes = [
         loadChildren: () => import('./features/vehicules/vehicules.routes').then((m) => m.vehiculesRoutes),
       },
       {
+        path: 'interventions',
+        loadChildren: () =>
+          import('./features/interventions/interventions.routes').then((m) => m.interventionsRoutes),
+      },
+      {
         path: 'parametres',
         canActivate: [roleGuard],
         data: { permission: 'settings:manage' },

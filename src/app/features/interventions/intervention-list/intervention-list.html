@@ -1,0 +1,222 @@
+<div class="space-y-6">
+  <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div>
+      <h1 class="text-2xl font-semibold text-slate-900">Interventions</h1>
+      <p class="mt-1 text-sm text-slate-500">Consultez et recherchez les interventions de l'atelier.</p>
+    </div>
+    @if (authz.hasPermission('workshop:manage')) {
+      <a
+        routerLink="/interventions/nouveau"
+        class="inline-flex items-center justify-center rounded-md bg-blue-700 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+      >
+        Nouvelle intervention
+      </a>
+    }
+  </div>
+
+  <div class="rounded-lg bg-white p-4 shadow">
+    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div>
+        <label for="intervention-search" class="block text-sm font-medium text-slate-700">Rechercher</label>
+        <input
+          id="intervention-search"
+          type="search"
+          [value]="interventions.query()"
+          (input)="onSearch($event)"
+          placeholder="Immatriculation, marque, modèle ou propriétaire"
+          autocomplete="off"
+          class="mt-1 w-full rounded border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+      <div>
+        <label for="intervention-status-filter" class="block text-sm font-medium text-slate-700">Statut</label>
+        <select
+          id="intervention-status-filter"
+          [value]="interventions.statusFilter()"
+          (change)="onStatusFilter($event)"
+          class="mt-1 w-full rounded border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="all">Tous</option>
+          @for (option of statusOptions; track option.value) {
+            <option [value]="option.value">{{ option.label }}</option>
+          }
+        </select>
+      </div>
+      <div>
+        <label for="intervention-date-from" class="block text-sm font-medium text-slate-700">Du</label>
+        <input
+          id="intervention-date-from"
+          type="date"
+          [value]="interventions.dateFrom()"
+          (input)="onDateFrom($event)"
+          class="mt-1 w-full rounded border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+      <div>
+        <label for="intervention-date-to" class="block text-sm font-medium text-slate-700">Au</label>
+        <input
+          id="intervention-date-to"
+          type="date"
+          [value]="interventions.dateTo()"
+          (input)="onDateTo($event)"
+          class="mt-1 w-full rounded border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+    </div>
+    @if (interventions.hasActiveFilters()) {
+      <button
+        type="button"
+        (click)="clearFilters()"
+        class="mt-3 inline-flex items-center justify-center rounded-md border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+      >
+        Réinitialiser les filtres
+      </button>
+    }
+  </div>
+
+  @if (interventions.isEmpty()) {
+    <div class="rounded-lg bg-white p-8 text-center shadow">
+      <p class="text-sm text-slate-600">Aucune intervention enregistrée.</p>
+      @if (authz.hasPermission('workshop:manage')) {
+        <a
+          routerLink="/interventions/nouveau"
+          class="mt-4 inline-flex items-center justify-center rounded-md bg-blue-700 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+        >
+          Créer une intervention
+        </a>
+      }
+    </div>
+  } @else if (interventions.isNoResult()) {
+    <div class="rounded-lg bg-white p-8 text-center shadow">
+      <p class="text-sm text-slate-600">Aucune intervention ne correspond à votre recherche.</p>
+      <button
+        type="button"
+        (click)="clearFilters()"
+        class="mt-4 inline-flex items-center justify-center rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+      >
+        Effacer la recherche et les filtres
+      </button>
+    </div>
+  } @else {
+    <div class="hidden overflow-x-auto rounded-lg bg-white shadow md:block">
+      <table class="min-w-full divide-y divide-slate-200">
+        <caption class="sr-only">Liste des interventions</caption>
+        <thead class="bg-slate-50">
+          <tr>
+            <th scope="col" class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Date</th>
+            <th scope="col" class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Véhicule</th>
+            <th scope="col" class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Propriétaire</th>
+            <th scope="col" class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Statut</th>
+            <th scope="col" class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Coût</th>
+            <th scope="col" class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-500">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-200">
+          @for (intervention of interventions.filteredInterventions(); track intervention.id) {
+            <tr>
+              <td class="whitespace-nowrap px-4 py-3 text-sm text-slate-700">{{ intervention.date }}</td>
+              <td class="px-4 py-3 text-sm">
+                @if (vehicleMissing(intervention)) {
+                  <span class="text-red-600">Véhicule introuvable</span>
+                } @else {
+                  <a
+                    [routerLink]="['/vehicules', intervention.vehicleId]"
+                    class="text-blue-700 hover:underline focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    {{ vehicleLabel(intervention) }}
+                  </a>
+                }
+              </td>
+              <td class="px-4 py-3 text-sm">
+                @if (ownerMissing(intervention)) {
+                  <span class="text-red-600">Propriétaire introuvable</span>
+                } @else {
+                  <a
+                    [routerLink]="['/clients', ownerId(intervention)]"
+                    class="text-blue-700 hover:underline focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    {{ ownerName(intervention) }}
+                  </a>
+                }
+              </td>
+              <td class="whitespace-nowrap px-4 py-3 text-sm">
+                <span
+                  class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium"
+                  [class]="statusClasses(intervention.status)"
+                >
+                  {{ statusLabel(intervention.status) }}
+                </span>
+              </td>
+              <td class="whitespace-nowrap px-4 py-3 text-sm text-slate-700">{{ costLabel(intervention) }}</td>
+              <td class="whitespace-nowrap px-4 py-3 text-right text-sm">
+                <a
+                  [routerLink]="['/interventions', intervention.id]"
+                  class="font-medium text-blue-700 hover:underline focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  Consulter
+                </a>
+                @if (authz.hasPermission('workshop:manage')) {
+                  <a
+                    [routerLink]="['/interventions', intervention.id, 'modifier']"
+                    class="ml-3 font-medium text-blue-700 hover:underline focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    Modifier
+                  </a>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <ul class="space-y-4 md:hidden">
+      @for (intervention of interventions.filteredInterventions(); track intervention.id) {
+        <li class="rounded-lg bg-white p-4 shadow">
+          <div class="flex items-start justify-between gap-2">
+            <div>
+              <p class="font-medium text-slate-900">{{ intervention.date }}</p>
+              <p class="text-sm text-slate-500">{{ vehicleLabel(intervention) }}</p>
+            </div>
+            <span
+              class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium"
+              [class]="statusClasses(intervention.status)"
+            >
+              {{ statusLabel(intervention.status) }}
+            </span>
+          </div>
+          <dl class="mt-3 space-y-1 text-sm">
+            <div class="flex gap-2">
+              <dt class="font-medium text-slate-500">Propriétaire</dt>
+              @if (ownerMissing(intervention)) {
+                <dd class="text-red-600">Propriétaire introuvable</dd>
+              } @else {
+                <dd class="text-slate-700">{{ ownerName(intervention) }}</dd>
+              }
+            </div>
+            <div class="flex gap-2">
+              <dt class="font-medium text-slate-500">Coût</dt>
+              <dd class="text-slate-700">{{ costLabel(intervention) }}</dd>
+            </div>
+          </dl>
+          <div class="mt-3 flex gap-4">
+            <a
+              [routerLink]="['/interventions', intervention.id]"
+              class="font-medium text-blue-700 hover:underline focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              Consulter
+            </a>
+            @if (authz.hasPermission('workshop:manage')) {
+              <a
+                [routerLink]="['/interventions', intervention.id, 'modifier']"
+                class="font-medium text-blue-700 hover:underline focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                Modifier
+              </a>
+            }
+          </div>
+        </li>
+      }
+    </ul>
+  }
+</div>

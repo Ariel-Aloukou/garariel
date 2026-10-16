@@ -1,0 +1,198 @@
+<div class="mx-auto max-w-2xl space-y-6">
+  <div>
+    <h1 class="text-2xl font-semibold text-slate-900">
+      {{ isEdit ? "Modifier l'intervention" : 'Nouvelle intervention' }}
+    </h1>
+    <p class="mt-1 text-sm text-slate-500">Les champs marqués d'un astérisque sont obligatoires.</p>
+  </div>
+
+  @if (notFound) {
+    <div class="rounded-lg bg-white p-8 text-center shadow">
+      <p class="text-sm text-slate-600">Cette intervention est introuvable.</p>
+      <a
+        routerLink="/interventions"
+        class="mt-4 inline-flex items-center justify-center rounded-md bg-blue-700 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+      >
+        Retour à la liste
+      </a>
+    </div>
+  } @else {
+    @if (!vehicles.hasVehicles()) {
+      <div role="alert" class="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+        <p class="font-medium">Aucun véhicule disponible.</p>
+        <p class="mt-1">Une intervention doit être rattachée à un véhicule existant. Créez d'abord un véhicule.</p>
+        <a
+          routerLink="/vehicules/nouveau"
+          class="mt-2 inline-flex items-center justify-center rounded-md bg-blue-700 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+        >
+          Créer un véhicule
+        </a>
+      </div>
+    }
+
+    @if (showSummary() && form.invalid) {
+      <div
+        #errorSummary
+        role="alert"
+        tabindex="-1"
+        class="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800 focus:outline-none"
+      >
+        <p class="font-medium">Le formulaire contient des erreurs :</p>
+        <ul class="mt-1 list-inside list-disc">
+          @if (form.controls.vehicleId.invalid) {
+            <li><a href="#intervention-vehicleId" class="underline focus:outline-none focus:ring-2 focus:ring-red-500">Le véhicule est requis ou introuvable.</a></li>
+          }
+          @if (form.controls.date.invalid) {
+            <li><a href="#intervention-date" class="underline focus:outline-none focus:ring-2 focus:ring-red-500">La date est requise ou au format invalide.</a></li>
+          }
+          @if (form.controls.problem.invalid) {
+            <li><a href="#intervention-problem" class="underline focus:outline-none focus:ring-2 focus:ring-red-500">La description du problème est requise.</a></li>
+          }
+          @if (form.controls.cost.invalid) {
+            <li><a href="#intervention-cost" class="underline focus:outline-none focus:ring-2 focus:ring-red-500">Le coût est au format invalide.</a></li>
+          }
+        </ul>
+      </div>
+    }
+    @if (error()) {
+      <div role="alert" class="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+        {{ error() }}
+      </div>
+    }
+    @if (success()) {
+      <div role="status" class="rounded-md border border-green-200 bg-green-50 p-3 text-sm text-green-800">
+        {{ success() }}
+      </div>
+    }
+
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate class="space-y-4 rounded-lg bg-white p-6 shadow">
+      <div class="space-y-2">
+        <label for="intervention-vehicleId" class="block text-sm font-medium text-slate-700">Véhicule *</label>
+        <select
+          id="intervention-vehicleId"
+          formControlName="vehicleId"
+          class="w-full rounded border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          [attr.aria-invalid]="form.controls.vehicleId.invalid && form.controls.vehicleId.touched ? true : null"
+          [attr.aria-describedby]="message('vehicleId') ? 'intervention-vehicleId-error' : null"
+        >
+          <option value="" disabled>Sélectionnez un véhicule…</option>
+          @if (vehicleMissing && intervention) {
+            <option [value]="intervention.vehicleId" disabled>{{ intervention.vehicleId }} — véhicule introuvable</option>
+          }
+          @for (vehicle of vehicles.vehicles(); track vehicle.id) {
+            <option [value]="vehicle.id">{{ vehicle.plate }} — {{ vehicle.make }} {{ vehicle.model }}</option>
+          }
+        </select>
+        @if (selectedVehicle(); as vehicle) {
+          <p class="text-xs text-slate-500">
+            Propriétaire :
+            @if (selectedOwner(); as owner) {
+              <a [routerLink]="['/clients', owner.id]" class="text-blue-700 hover:underline focus:outline-none focus:ring-2 focus:ring-blue-500">{{ owner.fullName }}</a>
+            } @else {
+              <span class="text-red-600">Client introuvable</span>
+            }
+          </p>
+        }
+        @if (message('vehicleId'); as vehicleMessage) {
+          <p id="intervention-vehicleId-error" class="text-xs text-red-600">{{ vehicleMessage }}</p>
+        }
+      </div>
+
+      <div class="space-y-2">
+        <label for="intervention-date" class="block text-sm font-medium text-slate-700">Date *</label>
+        <input
+          id="intervention-date"
+          type="date"
+          formControlName="date"
+          class="w-full rounded border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          [attr.aria-invalid]="form.controls.date.invalid && form.controls.date.touched ? true : null"
+          [attr.aria-describedby]="message('date') ? 'intervention-date-error' : null"
+        />
+        @if (message('date'); as dateMessage) {
+          <p id="intervention-date-error" class="text-xs text-red-600">{{ dateMessage }}</p>
+        }
+      </div>
+
+      <div class="space-y-2">
+        <label for="intervention-problem" class="block text-sm font-medium text-slate-700">Description du problème *</label>
+        <textarea
+          id="intervention-problem"
+          rows="3"
+          formControlName="problem"
+          class="w-full rounded border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          [attr.aria-invalid]="form.controls.problem.invalid && form.controls.problem.touched ? true : null"
+          [attr.aria-describedby]="message('problem') ? 'intervention-problem-error' : null"
+        ></textarea>
+        @if (message('problem'); as problemMessage) {
+          <p id="intervention-problem-error" class="text-xs text-red-600">{{ problemMessage }}</p>
+        }
+      </div>
+
+      <div class="space-y-2">
+        <label for="intervention-diagnosis" class="block text-sm font-medium text-slate-700">Diagnostic</label>
+        <textarea
+          id="intervention-diagnosis"
+          rows="2"
+          formControlName="diagnosis"
+          class="w-full rounded border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        ></textarea>
+      </div>
+
+      <div class="space-y-2">
+        <label for="intervention-workDone" class="block text-sm font-medium text-slate-700">Travaux effectués</label>
+        <textarea
+          id="intervention-workDone"
+          rows="2"
+          formControlName="workDone"
+          class="w-full rounded border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        ></textarea>
+      </div>
+
+      <div class="space-y-2">
+        <label for="intervention-cost" class="block text-sm font-medium text-slate-700">Coût (€)</label>
+        <input
+          id="intervention-cost"
+          type="text"
+          inputmode="decimal"
+          formControlName="cost"
+          autocomplete="off"
+          class="w-full rounded border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          [attr.aria-invalid]="form.controls.cost.invalid && form.controls.cost.touched ? true : null"
+          [attr.aria-describedby]="message('cost') ? 'intervention-cost-error' : null"
+        />
+        @if (message('cost'); as costMessage) {
+          <p id="intervention-cost-error" class="text-xs text-red-600">{{ costMessage }}</p>
+        }
+      </div>
+
+      <div class="space-y-2">
+        <label for="intervention-status" class="block text-sm font-medium text-slate-700">Statut *</label>
+        <select
+          id="intervention-status"
+          formControlName="status"
+          class="w-full rounded border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          @for (option of statusOptions; track option.value) {
+            <option [value]="option.value">{{ option.label }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="flex flex-col gap-3 sm:flex-row sm:justify-end">
+        <a
+          routerLink="/interventions"
+          class="inline-flex items-center justify-center rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          Annuler
+        </a>
+        <button
+          type="submit"
+          class="inline-flex items-center justify-center rounded-md bg-blue-700 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
+          [disabled]="loading()"
+        >
+          {{ loading() ? 'Enregistrement…' : (isEdit ? "Enregistrer les modifications" : "Créer l'intervention") }}
+        </button>
+      </div>
+    </form>
+  }
+</div>

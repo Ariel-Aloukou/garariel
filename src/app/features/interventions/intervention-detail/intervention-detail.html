@@ -1,0 +1,143 @@
+<div class="mx-auto max-w-2xl space-y-6">
+  @if (deleted()) {
+    <div role="status" class="rounded-md border border-green-200 bg-green-50 p-3 text-sm text-green-800">
+      Intervention supprimée avec succès.
+    </div>
+  } @else if (!intervention()) {
+    <div class="rounded-lg bg-white p-8 text-center shadow">
+      <h1 class="text-xl font-semibold text-slate-900">Intervention introuvable</h1>
+      <p class="mt-2 text-sm text-slate-600">Cette intervention n'existe pas ou a été supprimée.</p>
+      <a
+        routerLink="/interventions"
+        class="mt-4 inline-flex items-center justify-center rounded-md bg-blue-700 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+      >
+        Retour à la liste
+      </a>
+    </div>
+  } @else {
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <h1 class="text-2xl font-semibold text-slate-900">Intervention du {{ intervention()!.date }}</h1>
+        <p class="mt-1 text-sm text-slate-500">
+          @if (vehicle(); as vehicle) {
+            {{ vehicle.plate }} — {{ vehicle.make }} {{ vehicle.model }}
+          } @else {
+            Véhicule introuvable
+          }
+        </p>
+      </div>
+      <div class="flex flex-wrap gap-3">
+        @if (authz.hasPermission('workshop:manage')) {
+          <a
+            [routerLink]="['/interventions', intervention()!.id, 'modifier']"
+            class="inline-flex items-center justify-center rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            Modifier
+          </a>
+          <button
+            type="button"
+            (click)="requestDelete()"
+            class="inline-flex items-center justify-center rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-300 focus:ring-offset-2"
+          >
+            Supprimer
+          </button>
+        }
+      </div>
+    </div>
+
+    @if (confirming()) {
+      <div
+        role="alertdialog"
+        aria-labelledby="delete-confirm-title"
+        aria-describedby="delete-confirm-text"
+        class="rounded-md border border-red-200 bg-red-50 p-4"
+      >
+        <h2 id="delete-confirm-title" class="text-sm font-semibold text-red-800">Confirmer la suppression</h2>
+        <p id="delete-confirm-text" class="mt-1 text-sm text-red-700">
+          Voulez-vous vraiment supprimer l'intervention du {{ intervention()!.date }} ? Cette action est
+          irréversible.
+        </p>
+        <div class="mt-3 flex flex-col gap-2 sm:flex-row sm:justify-end">
+          <button
+            type="button"
+            (click)="cancelDelete()"
+            class="inline-flex items-center justify-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            Annuler
+          </button>
+          <button
+            type="button"
+            (click)="confirmDelete()"
+            class="inline-flex items-center justify-center rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-300 focus:ring-offset-2"
+          >
+            Supprimer définitivement
+          </button>
+        </div>
+      </div>
+    }
+
+    <dl class="divide-y divide-slate-200 overflow-hidden rounded-lg bg-white shadow">
+      <div class="flex flex-col gap-1 p-4 sm:flex-row sm:gap-4">
+        <dt class="w-48 shrink-0 text-sm font-medium text-slate-500">Date</dt>
+        <dd class="text-sm text-slate-900">{{ intervention()!.date }}</dd>
+      </div>
+      <div class="flex flex-col gap-1 p-4 sm:flex-row sm:gap-4">
+        <dt class="w-48 shrink-0 text-sm font-medium text-slate-500">Véhicule</dt>
+        @if (vehicle(); as vehicle) {
+          <dd class="text-sm">
+            <a
+              [routerLink]="['/vehicules', vehicle.id]"
+              class="text-blue-700 hover:underline focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              {{ vehicle.plate }} — {{ vehicle.make }} {{ vehicle.model }}
+            </a>
+          </dd>
+        } @else {
+          <dd class="text-sm text-red-600">Véhicule introuvable</dd>
+        }
+      </div>
+      <div class="flex flex-col gap-1 p-4 sm:flex-row sm:gap-4">
+        <dt class="w-48 shrink-0 text-sm font-medium text-slate-500">Propriétaire</dt>
+        @if (owner(); as owner) {
+          <dd class="text-sm">
+            <a
+              [routerLink]="['/clients', owner.id]"
+              class="text-blue-700 hover:underline focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              {{ owner.fullName }}
+            </a>
+          </dd>
+        } @else {
+          <dd class="text-sm text-red-600">Propriétaire introuvable</dd>
+        }
+      </div>
+      <div class="flex flex-col gap-1 p-4 sm:flex-row sm:gap-4">
+        <dt class="w-48 shrink-0 text-sm font-medium text-slate-500">Statut</dt>
+        <dd class="text-sm">
+          <span
+            class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium"
+            [class]="statusClasses()"
+          >
+            {{ statusLabel() }}
+          </span>
+        </dd>
+      </div>
+      <div class="flex flex-col gap-1 p-4 sm:flex-row sm:gap-4">
+        <dt class="w-48 shrink-0 text-sm font-medium text-slate-500">Description du problème</dt>
+        <dd class="whitespace-pre-line text-sm text-slate-900">{{ intervention()!.problem }}</dd>
+      </div>
+      <div class="flex flex-col gap-1 p-4 sm:flex-row sm:gap-4">
+        <dt class="w-48 shrink-0 text-sm font-medium text-slate-500">Diagnostic</dt>
+        <dd class="whitespace-pre-line text-sm text-slate-900">{{ intervention()!.diagnosis ?? '—' }}</dd>
+      </div>
+      <div class="flex flex-col gap-1 p-4 sm:flex-row sm:gap-4">
+        <dt class="w-48 shrink-0 text-sm font-medium text-slate-500">Travaux effectués</dt>
+        <dd class="whitespace-pre-line text-sm text-slate-900">{{ intervention()!.workDone ?? '—' }}</dd>
+      </div>
+      <div class="flex flex-col gap-1 p-4 sm:flex-row sm:gap-4">
+        <dt class="w-48 shrink-0 text-sm font-medium text-slate-500">Coût</dt>
+        <dd class="text-sm text-slate-900">{{ costLabel() }}</dd>
+      </div>
+    </dl>
+  }
+</div>
