@@ -1,0 +1,79 @@
+<div class="flex min-h-screen items-center justify-center bg-slate-50 px-4">
+  <div class="w-full max-w-md">
+    <div class="space-y-6 rounded-lg bg-white p-6 shadow">
+      <div>
+        <h1 class="text-2xl font-semibold text-slate-900">Connexion</h1>
+        <p class="mt-1 text-sm text-slate-500">Accédez à votre espace de gestion.</p>
+      </div>
+
+      @if (error()) {
+        <div
+          #errorSummary
+          role="alert"
+          tabindex="-1"
+          class="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800 focus:outline-none"
+        >
+          {{ error() }}
+        </div>
+      }
+
+      <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate class="space-y-4">
+        <div class="space-y-2">
+          <label for="identifier" class="block text-sm font-medium text-slate-700">Identifiant</label>
+          <input
+            id="identifier"
+            type="email"
+            formControlName="identifier"
+            autocomplete="email"
+            class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            [attr.aria-invalid]="form.controls.identifier.invalid && form.controls.identifier.touched ? true : null"
+            [attr.aria-describedby]="form.controls.identifier.invalid && form.controls.identifier.touched ? 'identifier-error' : null"
+          />
+          @if (form.controls.identifier.touched && form.controls.identifier.hasError('required')) {
+            <p id="identifier-error" class="text-xs text-red-600">L'identifiant est requis.</p>
+          }
+        </div>
+
+        <div class="space-y-2">
+          <label for="password" class="block text-sm font-medium text-slate-700">Mot de passe</label>
+          <div class="relative">
+            <input
+              id="password"
+              [type]="showPassword() ? 'text' : 'password'"
+              formControlName="password"
+              autocomplete="current-password"
+              class="w-full rounded-md border border-slate-300 px-3 py-2 pr-16 text-sm text-slate-900 placeholder-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              [attr.aria-invalid]="form.controls.password.invalid && form.controls.password.touched ? true : null"
+              [attr.aria-describedby]="form.controls.password.invalid && form.controls.password.touched ? 'password-error' : null"
+            />
+            <button
+              type="button"
+              (click)="showPassword.set(!showPassword())"
+              class="absolute inset-y-0 right-0 px-3 text-xs font-medium text-slate-600 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              [attr.aria-pressed]="showPassword()"
+              [attr.aria-label]="showPassword() ? 'Masquer le mot de passe' : 'Afficher le mot de passe'"
+            >
+              {{ showPassword() ? 'Masquer' : 'Afficher' }}
+            </button>
+          </div>
+          @if (form.controls.password.touched && form.controls.password.hasError('required')) {
+            <p id="password-error" class="text-xs text-red-600">Le mot de passe est requis.</p>
+          }
+        </div>
+
+        <button
+          type="submit"
+          [disabled]="loading()"
+          class="w-full rounded-md bg-blue-700 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
+        >
+          {{ loading() ? 'Connexion…' : 'Se connecter' }}
+        </button>
+
+        <p class="text-center text-sm text-slate-600">
+          Pas encore de compte ?
+          <a routerLink="/auth/register" class="font-medium text-blue-700 hover:underline">Créer un compte</a>
+        </p>
+      </form>
+    </div>
+  </div>
+</div>

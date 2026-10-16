@@ -54,6 +54,63 @@ ng e2e
 
 Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
 
+## Authentication & Authorization (prototype)
+
+The current authentication and role-based authorization features are a **frontend prototype**. There is no backend and no external database: all data lives in the browser's `localStorage`.
+
+### Demo accounts
+
+| Identifier | Password | Role |
+| --- | --- | --- |
+| `admin@example.com` | `admin1234` | Administrateur |
+| `staff@example.com` | `staff1234` | Employé |
+
+Self-registration only ever creates accounts with the **Employé** role. The **Administrateur** role is reserved for the seeded demo accounts above.
+
+### Security limitations — read this carefully
+
+These limitations are inherent to a client-only prototype and are **not** a production-ready security model:
+
+- **`localStorage` is not secure.** Session tokens and stored data are readable by any script running on the page (e.g. via XSS) and persist across browser restarts. Never store sensitive data there in a real application.
+- **No backend means no real enforcement.** Every check (login, permissions, route guards) runs in the browser and can be bypassed by editing application state, `localStorage`, or the JavaScript itself. Route guards protect navigation, not data.
+- **Passwords are never stored in clear text.** They are hashed client-side with a non-reversible derivation (Web Crypto, PBKDF2-SHA256, per-user random salt). However, because the derivation also happens in the browser, this only limits accidental exposure — it does **not** stop a determined attacker with access to the page.
+- **Seed demo accounts ship with fixed passwords.** They exist only to demonstrate the two roles and must be removed or replaced before any real deployment.
+
+### What this means for the future
+
+A real deployment requires: a server-side backend, password hashing and verification performed server-side (e.g. bcrypt/argon2), a proper session or token mechanism, HTTPS, and server-enforced authorization. This prototype is intended to specify and validate the UX and front-end architecture, not to be production security.
+
+## Client management (prototype)
+
+Clients are the first business domain of the garage. Like authentication, client management is a **frontend-only prototype**: records are stored in the browser's `localStorage` under the key `garariel.clients`, with a deterministic demo seed used for development and tests. No personal or real data should be stored.
+
+### Routes
+
+| Route | Purpose | Required permission |
+| --- | --- | --- |
+| `/clients` | List and search clients | `clients:read` |
+| `/clients/:id` | View a client | `clients:read` |
+| `/clients/nouveau` | Create a client | `clients:write` |
+| `/clients/:id/modifier` | Edit a client | `clients:write` |
+
+All routes are mounted lazily under the authenticated shell and are additionally protected by `roleGuard` (`data.permission`).
+
+### Permissions
+
+- **Administrateur**: `clients:read` and `clients:write` (can view, create, edit and delete).
+- **Employé**: `clients:read` only. Creation, editing and deletion entry points are hidden, and the write routes redirect to `/acces-refuse`.
+
+### Behaviour notes
+
+- A client has a **nom complet**, **téléphone**, **email** (all required) and an **adresse** (optional).
+- The list is searchable on name, phone and email (case- and accent-insensitive) and exposes explicit empty ("aucun client") and no-result states.
+- Deleting a client always requires an explicit confirmation step.
+- Client data persists across reloads via `localStorage`; unreadable or incomplete stored data is discarded so the app always starts from a usable state.
+
+### Prototype limitations
+
+The [security limitations](#security-limitations--read-this-carefully) described for authentication apply unchanged: permissions are enforced **in the browser only** and can be bypassed. The `clients:read` / `clients:write` guards shape navigation and UI, they are not a security boundary for the data.
+
 ## Additional Resources
 
 For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
