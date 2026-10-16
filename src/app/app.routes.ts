@@ -21,6 +21,10 @@ export const routes: Routes = [
         loadChildren: () => import('./features/clients/clients.routes').then((m) => m.clientsRoutes),
       },
       {
+        path: 'vehicules',
+        loadChildren: () => import('./features/vehicules/vehicules.routes').then((m) => m.vehiculesRoutes),
+      },
+      {
         path: 'parametres',
         canActivate: [roleGuard],
         data: { permission: 'settings:manage' },

@@ -55,6 +55,30 @@ describe('Shell', () => {
     expect(clientsLink?.getAttribute('href')).toBe('/clients');
   });
 
+  it('points the Véhicules entry at /vehicules for a role with workshop:read', async () => {
+    await auth.login('staff@example.com', 'staff1234');
+    const fixture = TestBed.createComponent(Shell);
+    await fixture.whenStable();
+
+    const el = fixture.nativeElement as HTMLElement;
+    const vehiculesLink = Array.from(el.querySelectorAll('a')).find(
+      (link) => link.textContent?.trim() === 'Véhicules'
+    );
+    expect(vehiculesLink).toBeTruthy();
+    expect(vehiculesLink?.getAttribute('href')).toBe('/vehicules');
+  });
+
+  it('hides the Véhicules entry when workshop:read is not granted', async () => {
+    const fixture = TestBed.createComponent(Shell);
+    await fixture.whenStable();
+
+    const el = fixture.nativeElement as HTMLElement;
+    const vehiculesLink = Array.from(el.querySelectorAll('a')).find(
+      (link) => link.textContent?.trim() === 'Véhicules'
+    );
+    expect(vehiculesLink).toBeUndefined();
+  });
+
   it('clears the session on logout', async () => {
     await auth.login('staff@example.com', 'staff1234');
     const fixture = TestBed.createComponent(Shell);

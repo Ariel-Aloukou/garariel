@@ -17,6 +17,9 @@ import { AuthorizationService } from '../services/authorization.service';
               <a routerLink="/clients" class="rounded px-2 py-1 hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-400">Clients</a>
             }
             @if (authz.hasPermission('workshop:read')) {
+              <a routerLink="/vehicules" class="rounded px-2 py-1 hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-400">Véhicules</a>
+            }
+            @if (authz.hasPermission('workshop:read')) {
               <a routerLink="/" class="rounded px-2 py-1 hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-400">Atelier</a>
             }
             @if (authz.hasPermission('settings:manage')) {

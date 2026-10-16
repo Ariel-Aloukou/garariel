@@ -1,0 +1,156 @@
+<div class="space-y-6">
+  <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div>
+      <h1 class="text-2xl font-semibold text-slate-900">Véhicules</h1>
+      <p class="mt-1 text-sm text-slate-500">Consultez et recherchez les véhicules du garage.</p>
+    </div>
+    @if (authz.hasPermission('workshop:manage')) {
+      <a
+        routerLink="/vehicules/nouveau"
+        class="inline-flex items-center justify-center rounded-md bg-blue-700 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+      >
+        Nouveau véhicule
+      </a>
+    }
+  </div>
+
+  <div class="rounded-lg bg-white p-4 shadow">
+    <label for="vehicle-search" class="block text-sm font-medium text-slate-700">Rechercher un véhicule</label>
+    <input
+      id="vehicle-search"
+      type="search"
+      [value]="vehicles.query()"
+      (input)="onSearch($event)"
+      placeholder="Immatriculation, marque ou modèle"
+      autocomplete="off"
+      class="mt-1 w-full rounded border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+    />
+  </div>
+
+  @if (vehicles.isEmpty()) {
+    <div class="rounded-lg bg-white p-8 text-center shadow">
+      <p class="text-sm text-slate-600">Aucun véhicule enregistré.</p>
+      @if (authz.hasPermission('workshop:manage')) {
+        <a
+          routerLink="/vehicules/nouveau"
+          class="mt-4 inline-flex items-center justify-center rounded-md bg-blue-700 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+        >
+          Créer un véhicule
+        </a>
+      }
+    </div>
+  } @else if (vehicles.isNoResult()) {
+    <div class="rounded-lg bg-white p-8 text-center shadow">
+      <p class="text-sm text-slate-600">Aucun résultat pour « {{ vehicles.query() }} ».</p>
+      <button
+        type="button"
+        (click)="clearSearch()"
+        class="mt-4 inline-flex items-center justify-center rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+      >
+        Effacer la recherche
+      </button>
+    </div>
+  } @else {
+    <div class="hidden overflow-x-auto rounded-lg bg-white shadow md:block">
+      <table class="min-w-full divide-y divide-slate-200">
+        <caption class="sr-only">Liste des véhicules</caption>
+        <thead class="bg-slate-50">
+          <tr>
+            <th scope="col" class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Immatriculation</th>
+            <th scope="col" class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Marque</th>
+            <th scope="col" class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Modèle</th>
+            <th scope="col" class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Année</th>
+            <th scope="col" class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Client propriétaire</th>
+            <th scope="col" class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-500">
+              <span class="sr-only">Actions</span>
+            </th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+          @for (vehicle of vehicles.filteredVehicles(); track vehicle.id) {
+            <tr class="hover:bg-slate-50">
+              <td class="whitespace-nowrap px-4 py-3 text-sm font-medium text-slate-900">{{ vehicle.plate }}</td>
+              <td class="whitespace-nowrap px-4 py-3 text-sm text-slate-700">{{ vehicle.make }}</td>
+              <td class="whitespace-nowrap px-4 py-3 text-sm text-slate-700">{{ vehicle.model }}</td>
+              <td class="whitespace-nowrap px-4 py-3 text-sm text-slate-700">{{ vehicle.year ?? '—' }}</td>
+              <td class="whitespace-nowrap px-4 py-3 text-sm">
+                @if (ownerMissing(vehicle)) {
+                  <span class="text-red-600">Client introuvable</span>
+                } @else {
+                  <a
+                    [routerLink]="['/clients', vehicle.clientId]"
+                    class="text-blue-700 hover:underline focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    {{ clientName(vehicle) }}
+                  </a>
+                }
+              </td>
+              <td class="whitespace-nowrap px-4 py-3 text-right text-sm">
+                <a
+                  [routerLink]="['/vehicules', vehicle.id]"
+                  class="font-medium text-blue-700 hover:underline focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  Consulter
+                </a>
+                @if (authz.hasPermission('workshop:manage')) {
+                  <a
+                    [routerLink]="['/vehicules', vehicle.id, 'modifier']"
+                    class="ml-3 font-medium text-blue-700 hover:underline focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    Modifier
+                  </a>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <ul class="space-y-4 md:hidden">
+      @for (vehicle of vehicles.filteredVehicles(); track vehicle.id) {
+        <li class="rounded-lg bg-white p-4 shadow">
+          <p class="font-medium text-slate-900">{{ vehicle.plate }}</p>
+          <dl class="mt-2 space-y-1 text-sm text-slate-600">
+            <div class="flex gap-2">
+              <dt class="font-medium text-slate-500">Marque</dt>
+              <dd>{{ vehicle.make }}</dd>
+            </div>
+            <div class="flex gap-2">
+              <dt class="font-medium text-slate-500">Modèle</dt>
+              <dd>{{ vehicle.model }}</dd>
+            </div>
+            <div class="flex gap-2">
+              <dt class="font-medium text-slate-500">Année</dt>
+              <dd>{{ vehicle.year ?? '—' }}</dd>
+            </div>
+            <div class="flex gap-2">
+              <dt class="font-medium text-slate-500">Client</dt>
+              @if (ownerMissing(vehicle)) {
+                <dd class="text-red-600">Client introuvable</dd>
+              } @else {
+                <dd>{{ clientName(vehicle) }}</dd>
+              }
+            </div>
+          </dl>
+          <div class="mt-3 flex gap-4">
+            <a
+              [routerLink]="['/vehicules', vehicle.id]"
+              class="font-medium text-blue-700 hover:underline focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              Consulter
+            </a>
+            @if (authz.hasPermission('workshop:manage')) {
+              <a
+                [routerLink]="['/vehicules', vehicle.id, 'modifier']"
+                class="font-medium text-blue-700 hover:underline focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                Modifier
+              </a>
+            }
+          </div>
+        </li>
+      }
+    </ul>
+  }
+</div>

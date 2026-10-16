@@ -30,15 +30,12 @@ export class ClientForm {
   readonly error = signal<string | null>(null);
   readonly showSummary = signal(false);
 
-  readonly form = this.fb.nonNullable.group(
-    {
-      fullName: ['', [Validators.required]],
-      phone: ['', [Validators.required, Validators.pattern(PHONE_PATTERN)]],
-      email: ['', [Validators.required, Validators.email]],
-      address: [''],
-    },
-    { updateOn: 'blur' }
-  );
+  readonly form = this.fb.nonNullable.group({
+    fullName: ['', [Validators.required]],
+    phone: ['', [Validators.required, Validators.pattern(PHONE_PATTERN)]],
+    email: ['', [Validators.required, Validators.email]],
+    address: [''],
+  });
 
   constructor() {
     if (this.isEdit && !this.notFound()) {

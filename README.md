@@ -111,6 +111,43 @@ All routes are mounted lazily under the authenticated shell and are additionally
 
 The [security limitations](#security-limitations--read-this-carefully) described for authentication apply unchanged: permissions are enforced **in the browser only** and can be bypassed. The `clients:read` / `clients:write` guards shape navigation and UI, they are not a security boundary for the data.
 
+## Vehicle management (prototype)
+
+Vehicles are the second business domain of the garage. Like the other domains, vehicle management is a **frontend-only prototype**: records are stored in the browser's `localStorage` under the key `garariel.vehicles`, with a deterministic demo seed (referencing the seeded clients `client-1`…`client-3`) used for development and tests.
+
+### Routes
+
+| Route | Purpose | Required permission |
+| --- | --- | --- |
+| `/vehicules` | List and search vehicles | `workshop:read` |
+| `/vehicules/:id` | View a vehicle | `workshop:read` |
+| `/vehicules/nouveau` | Create a vehicle | `workshop:manage` |
+| `/vehicules/:id/modifier` | Edit a vehicle | `workshop:manage` |
+
+The routes are lazy-mounted under the shell like `clients`, each guarded by `roleGuard` with its `data.permission`. The shell exposes a « Véhicules » navigation entry when the current role holds `workshop:read`.
+
+### Permissions
+
+- Read access requires `workshop:read`; create, update and delete require `workshop:manage`.
+- Both seeded roles currently hold **both** permissions, so a write denial is enforced by the guard but cannot be demonstrated with a seeded account. The generic guard behaviour ("a role lacking the permission is redirected to `/acces-refuse`") is covered by `core/guards/auth.guard.spec.ts`.
+
+### Behaviour
+
+- A vehicle has an immatriculation (`plate`), marque (`make`), modèle (`model`) and client propriétaire (`clientId`) — all required — plus an **optional** année (`year`, 4 digits between 1886 and the current year + 1).
+- Every vehicle is attached to an **existing** client chosen from the client list; a submission with a missing or unknown client is refused with an explicit field error. Whenever no client exists, creation is blocked and a link to `/clients/nouveau` is offered.
+- Search matches immatriculation, marque or modèle (accent-insensitive; plate comparison ignores spaces and hyphens). Searching by owner name is deliberately out of scope.
+- The list shows a scrollable table on wide screens and stacked cards on narrow ones, with explicit empty and no-result states.
+- Deleting a vehicle always requires an explicit confirmation dialog.
+- The owner client is resolved live via `ClientService`; a vehicle whose client no longer exists (for example after that client was deleted) is displayed with « Client introuvable » instead of crashing. Deleting a client does **not** cascade to its vehicles.
+
+### Verification note
+
+No desktop browser or viewport is available in this environment, so the "responsive" verification is **structural** (scrollable table `overflow-x-auto`, `md:block`/`md:hidden` card fallback, Tailwind classes) rather than pixel-level, as for `client-management`.
+
+### Limits
+
+The [security limitations](#security-limitations--read-this-carefully) described for authentication apply unchanged: `workshop:read` / `workshop:manage` are enforced **in the browser only**. There is no immatriculation uniqueness rule in this prototype.
+
 ## Additional Resources
 
 For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.

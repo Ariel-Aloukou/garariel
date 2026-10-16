@@ -1,0 +1,106 @@
+<div class="mx-auto max-w-2xl space-y-6">
+  @if (deleted()) {
+    <div role="status" class="rounded-md border border-green-200 bg-green-50 p-3 text-sm text-green-800">
+      Véhicule supprimé avec succès.
+    </div>
+  } @else if (!vehicle()) {
+    <div class="rounded-lg bg-white p-8 text-center shadow">
+      <h1 class="text-xl font-semibold text-slate-900">Véhicule introuvable</h1>
+      <p class="mt-2 text-sm text-slate-600">Ce véhicule n'existe pas ou a été supprimé.</p>
+      <a
+        routerLink="/vehicules"
+        class="mt-4 inline-flex items-center justify-center rounded-md bg-blue-700 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+      >
+        Retour à la liste
+      </a>
+    </div>
+  } @else {
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <h1 class="text-2xl font-semibold text-slate-900">{{ vehicle()!.plate }}</h1>
+        <p class="mt-1 text-sm text-slate-500">{{ vehicle()!.make }} {{ vehicle()!.model }}</p>
+      </div>
+      <div class="flex flex-wrap gap-3">
+        @if (authz.hasPermission('workshop:manage')) {
+          <a
+            [routerLink]="['/vehicules', vehicle()!.id, 'modifier']"
+            class="inline-flex items-center justify-center rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            Modifier
+          </a>
+          <button
+            type="button"
+            (click)="requestDelete()"
+            class="inline-flex items-center justify-center rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-300 focus:ring-offset-2"
+          >
+            Supprimer
+          </button>
+        }
+      </div>
+    </div>
+
+    @if (confirming()) {
+      <div
+        role="alertdialog"
+        aria-labelledby="delete-confirm-title"
+        aria-describedby="delete-confirm-text"
+        class="rounded-md border border-red-200 bg-red-50 p-4"
+      >
+        <h2 id="delete-confirm-title" class="text-sm font-semibold text-red-800">Confirmer la suppression</h2>
+        <p id="delete-confirm-text" class="mt-1 text-sm text-red-700">
+          Voulez-vous vraiment supprimer le véhicule « {{ vehicle()!.plate }} » ? Cette action est irréversible.
+        </p>
+        <div class="mt-3 flex flex-col gap-2 sm:flex-row sm:justify-end">
+          <button
+            type="button"
+            (click)="cancelDelete()"
+            class="inline-flex items-center justify-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            Annuler
+          </button>
+          <button
+            type="button"
+            (click)="confirmDelete()"
+            class="inline-flex items-center justify-center rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-300 focus:ring-offset-2"
+          >
+            Supprimer définitivement
+          </button>
+        </div>
+      </div>
+    }
+
+    <dl class="divide-y divide-slate-100 rounded-lg bg-white p-6 shadow">
+      <div class="flex flex-col gap-1 py-3 sm:flex-row sm:gap-4">
+        <dt class="w-40 text-sm font-medium text-slate-500">Immatriculation</dt>
+        <dd class="text-sm text-slate-900">{{ vehicle()!.plate }}</dd>
+      </div>
+      <div class="flex flex-col gap-1 py-3 sm:flex-row sm:gap-4">
+        <dt class="w-40 text-sm font-medium text-slate-500">Marque</dt>
+        <dd class="text-sm text-slate-900">{{ vehicle()!.make }}</dd>
+      </div>
+      <div class="flex flex-col gap-1 py-3 sm:flex-row sm:gap-4">
+        <dt class="w-40 text-sm font-medium text-slate-500">Modèle</dt>
+        <dd class="text-sm text-slate-900">{{ vehicle()!.model }}</dd>
+      </div>
+      <div class="flex flex-col gap-1 py-3 sm:flex-row sm:gap-4">
+        <dt class="w-40 text-sm font-medium text-slate-500">Année</dt>
+        <dd class="text-sm text-slate-900">{{ vehicle()!.year ?? '—' }}</dd>
+      </div>
+      <div class="flex flex-col gap-1 py-3 sm:flex-row sm:gap-4">
+        <dt class="w-40 text-sm font-medium text-slate-500">Client propriétaire</dt>
+        @if (owner(); as client) {
+          <dd class="text-sm">
+            <a
+              [routerLink]="['/clients', client.id]"
+              class="text-blue-700 hover:underline focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              {{ client.fullName }}
+            </a>
+          </dd>
+        } @else {
+          <dd class="text-sm text-red-600">Client introuvable</dd>
+        }
+      </div>
+    </dl>
+  }
+</div>

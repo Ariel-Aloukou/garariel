@@ -1,0 +1,182 @@
+<div class="mx-auto max-w-2xl space-y-6">
+  <div>
+    <h1 class="text-2xl font-semibold text-slate-900">
+      {{ isEdit ? 'Modifier le véhicule' : 'Nouveau véhicule' }}
+    </h1>
+    <p class="mt-1 text-sm text-slate-500">
+      Les champs marqués d'un astérisque sont obligatoires.
+    </p>
+  </div>
+
+  @if (notFound) {
+    <div class="rounded-lg bg-white p-8 text-center shadow">
+      <p class="text-sm text-slate-600">Ce véhicule est introuvable.</p>
+      <a
+        routerLink="/vehicules"
+        class="mt-4 inline-flex items-center justify-center rounded-md bg-blue-700 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+      >
+        Retour à la liste
+      </a>
+    </div>
+  } @else {
+    @if (!clients.hasClients()) {
+      <div role="alert" class="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+        <p class="font-medium">Aucun client disponible.</p>
+        <p class="mt-1">Un véhicule doit être rattaché à un client existant. Créez d'abord un client.</p>
+        <a
+          routerLink="/clients/nouveau"
+          class="mt-2 inline-flex items-center justify-center rounded-md bg-blue-700 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+        >
+          Créer un client
+        </a>
+      </div>
+    }
+
+    @if (showSummary() && form.invalid) {
+      <div
+        #errorSummary
+        role="alert"
+        tabindex="-1"
+        class="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800 focus:outline-none"
+      >
+        <p class="font-medium">Le formulaire contient des erreurs :</p>
+        <ul class="mt-1 list-inside list-disc">
+          @if (form.controls.plate.invalid) {
+            <li><a href="#vehicle-plate" class="underline focus:outline-none focus:ring-2 focus:ring-red-500">L'immatriculation est requise ou au format invalide.</a></li>
+          }
+          @if (form.controls.make.invalid) {
+            <li><a href="#vehicle-make" class="underline focus:outline-none focus:ring-2 focus:ring-red-500">La marque est requise.</a></li>
+          }
+          @if (form.controls.model.invalid) {
+            <li><a href="#vehicle-model" class="underline focus:outline-none focus:ring-2 focus:ring-red-500">Le modèle est requis.</a></li>
+          }
+          @if (form.controls.year.invalid) {
+            <li><a href="#vehicle-year" class="underline focus:outline-none focus:ring-2 focus:ring-red-500">L'année est au format invalide.</a></li>
+          }
+          @if (form.controls.clientId.invalid) {
+            <li><a href="#vehicle-clientId" class="underline focus:outline-none focus:ring-2 focus:ring-red-500">Le client propriétaire est requis ou introuvable.</a></li>
+          }
+        </ul>
+      </div>
+    }
+    @if (error()) {
+      <div role="alert" class="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+        {{ error() }}
+      </div>
+    }
+    @if (success()) {
+      <div role="status" class="rounded-md border border-green-200 bg-green-50 p-3 text-sm text-green-800">
+        {{ success() }}
+      </div>
+    }
+
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate class="space-y-4 rounded-lg bg-white p-6 shadow">
+      <div class="space-y-2">
+        <label for="vehicle-plate" class="block text-sm font-medium text-slate-700">Immatriculation *</label>
+        <input
+          id="vehicle-plate"
+          type="text"
+          formControlName="plate"
+          autocomplete="off"
+          class="w-full rounded border border-slate-300 px-3 py-2 text-sm uppercase text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          [attr.aria-invalid]="form.controls.plate.invalid && form.controls.plate.touched ? true : null"
+          [attr.aria-describedby]="message('plate') ? 'vehicle-plate-error' : null"
+        />
+        @if (message('plate'); as plateMessage) {
+          <p id="vehicle-plate-error" class="text-xs text-red-600">{{ plateMessage }}</p>
+        }
+      </div>
+
+      <div class="space-y-2">
+        <label for="vehicle-make" class="block text-sm font-medium text-slate-700">Marque *</label>
+        <input
+          id="vehicle-make"
+          type="text"
+          formControlName="make"
+          autocomplete="off"
+          class="w-full rounded border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          [attr.aria-invalid]="form.controls.make.invalid && form.controls.make.touched ? true : null"
+          [attr.aria-describedby]="message('make') ? 'vehicle-make-error' : null"
+        />
+        @if (message('make'); as makeMessage) {
+          <p id="vehicle-make-error" class="text-xs text-red-600">{{ makeMessage }}</p>
+        }
+      </div>
+
+      <div class="space-y-2">
+        <label for="vehicle-model" class="block text-sm font-medium text-slate-700">Modèle *</label>
+        <input
+          id="vehicle-model"
+          type="text"
+          formControlName="model"
+          autocomplete="off"
+          class="w-full rounded border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          [attr.aria-invalid]="form.controls.model.invalid && form.controls.model.touched ? true : null"
+          [attr.aria-describedby]="message('model') ? 'vehicle-model-error' : null"
+        />
+        @if (message('model'); as modelMessage) {
+          <p id="vehicle-model-error" class="text-xs text-red-600">{{ modelMessage }}</p>
+        }
+      </div>
+
+      <div class="space-y-2">
+        <label for="vehicle-year" class="block text-sm font-medium text-slate-700">Année</label>
+        <input
+          id="vehicle-year"
+          type="text"
+          inputmode="numeric"
+          formControlName="year"
+          autocomplete="off"
+          class="w-full rounded border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          [attr.aria-invalid]="form.controls.year.invalid && form.controls.year.touched ? true : null"
+          [attr.aria-describedby]="message('year') ? 'vehicle-year-error' : null"
+        />
+        @if (message('year'); as yearMessage) {
+          <p id="vehicle-year-error" class="text-xs text-red-600">{{ yearMessage }}</p>
+        }
+      </div>
+
+      <div class="space-y-2">
+        <label for="vehicle-clientId" class="block text-sm font-medium text-slate-700">Client propriétaire *</label>
+        <select
+          id="vehicle-clientId"
+          formControlName="clientId"
+          class="w-full rounded border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          [attr.aria-invalid]="form.controls.clientId.invalid && form.controls.clientId.touched ? true : null"
+          [attr.aria-describedby]="message('clientId') ? 'vehicle-clientId-error' : null"
+        >
+          <option value="" disabled>Sélectionnez un client…</option>
+          @if (ownerMissing && vehicle) {
+            <option [value]="vehicle.clientId" disabled>{{ vehicle.clientId }} — client introuvable</option>
+          }
+          @for (client of clients.clients(); track client.id) {
+            <option [value]="client.id">{{ client.fullName }}</option>
+          }
+        </select>
+        @if (message('clientId'); as clientMessage) {
+          <p id="vehicle-clientId-error" class="text-xs text-red-600">{{ clientMessage }}</p>
+        }
+      </div>
+
+      <div class="flex flex-col gap-3 sm:flex-row sm:justify-end">
+        <a
+          routerLink="/vehicules"
+          class="inline-flex items-center justify-center rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          Annuler
+        </a>
+        <button
+          type="submit"
+          [disabled]="loading() || !clients.hasClients()"
+          class="inline-flex items-center justify-center rounded-md bg-blue-700 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
+        >
+          @if (loading()) {
+            Enregistrement…
+          } @else {
+            {{ isEdit ? 'Enregistrer les modifications' : 'Créer le véhicule' }}
+          }
+        </button>
+      </div>
+    </form>
+  }
+</div>
